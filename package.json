@@ -1,0 +1,13 @@
+{
+  "main": "index",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.167.0",
+    "dynamoose": "^0.8.6",
+    "koa": "^2.4.1",
+    "koa-logger": "^3.1.0",
+    "koa-router": "^7.3.0"
+  }
+}
