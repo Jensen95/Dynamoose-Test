@@ -4,6 +4,7 @@ module.exports = (sequelize, DataTypes) => {
   const Subscriber = sequelize.define('Subscriber', {
     zenseId: {
       type: DataTypes.INTEGER,
+      primaryKey: true,
       allowNull: false
     },
     zenseMac: {

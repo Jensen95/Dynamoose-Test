@@ -3,14 +3,9 @@
 module.exports = {
   up: (queryInterface, Sequelize) =>
     queryInterface.createTable('Subscribers', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
       zenseId: {
         type: Sequelize.INTEGER,
+        primaryKey: true,
         allowNull: false
       },
       zenseMac: {
