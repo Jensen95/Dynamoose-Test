@@ -21,7 +21,7 @@ router.get('/', async (ctx) => {
     .catch(error => ctx.throw(404, error))
 })
 
-router.get('/latest', async (ctx) =>{
+router.get('/latest', async (ctx) => {
 
 })
 
@@ -54,6 +54,10 @@ router.post('/device', koaBody(), async (ctx) => {
     ctx.body = subscriber
   })
     .catch(error => ctx.throw(400, error))
+})
+
+router.put('/device', koaBody(), async (ctx) => {
+  // TODO: Add the option to change mac or extend termination date
 })
 
 app.use(logger())

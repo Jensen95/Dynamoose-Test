@@ -13,6 +13,10 @@ module.exports = (sequelize, DataTypes) => {
     build: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    changelog: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   })
 
