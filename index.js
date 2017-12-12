@@ -21,6 +21,22 @@ router.get('/', async (ctx) => {
     .catch(error => ctx.throw(404, error))
 })
 
+router.get('/latest', async (ctx) =>{
+
+})
+
+router.get('/auth', async (ctx) => {
+  // Length of sha256 is 64
+  const deviceToken = ctx.query.deviceToken
+  return Subscriber.find({where: {deviceToken}})
+    .then(subscriber => {
+      // If not found return nothing
+      // TODO: Add terminationDate check
+      ctx.body = subscriber
+    })
+    .catch(error => ctx.throw(403, error))
+})
+
 router.post('/device', koaBody(), async (ctx) => {
   const formBody = ctx.request.body
   if (formBody.zenseId == null || formBody.zenseMac == null) {
@@ -39,8 +55,6 @@ router.post('/device', koaBody(), async (ctx) => {
   })
     .catch(error => ctx.throw(400, error))
 })
-
-
 
 app.use(logger())
 app.use(router.routes())
