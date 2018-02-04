@@ -200,6 +200,49 @@ router.post('/build', managementAuthentication, koaBody(), async (ctx) => {
     .catch(error => ctx.throw(400, error))
 })
 
+router.put('/build', managementAuthentication, async (ctx) => {
+  // Version and serviceName plus an optional field is required
+  try {
+    JSON.parse(ctx.query.query)
+  } catch (error) {
+    return ctx.throw(400, 'Query not valid JSON')
+  }
+  const query = JSON.parse(ctx.query.query)
+  const {serviceName = null, version = null, buildName = null, changelog = null} = query
+  if (version == null || semver.valid(version) == null || serviceName == null || (buildName == null && changelog == null)) {
+    return ctx.throw(400, 'serviceName, version and [buildName || changelog] value is required')
+  }
+
+  if (buildName != null && buildName.length < 6) {
+    return ctx.throw(400, 'buildName must be longer than 5 characters')
+  }
+
+  if (changelog != null && changelog.length < 10) {
+    return ctx.throw(400, 'changelog must be longer than 10 characters')
+  }
+
+  return Service.findOne({
+    where: {
+      serviceName,
+      version
+    }
+  })
+    .then(service => {
+      if (buildName != null) {
+        service.buildName = buildName
+      }
+
+      if (changelog != null) {
+        service.changelog = changelog
+      }
+
+      return service.save().then(() => {
+        ctx.status = 204
+      })
+    })
+    .catch(error => ctx.throw(400, error))
+})
+
 app.use(logger())
 app.use(router.routes())
 app.use(router.allowedMethods())
