@@ -25,12 +25,15 @@ const deviceAuthentication = async (ctx, next) => {
     const deviceToken = ctx.headers.authorizationtoken
     await Subscriber.findOne({
       where: {deviceToken},
-      attributes: ['terminationDate']
+      attributes: [
+        'zenseId',
+        'terminationDate'
+      ]
     }).then(subscriber => {
       if (subscriber == null) {
         ctx.throw(401, 'Not found')
       }
-
+      ctx.zenseId = subscriber.zenseId
       // Check if license still is valid
       if (moment(subscriber.terminationDate).isBefore(moment(), 'day')) {
         ctx.throw(402, 'Renew ZenseControl license')
