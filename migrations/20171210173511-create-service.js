@@ -25,6 +25,11 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
+      downloads: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        default: 0
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

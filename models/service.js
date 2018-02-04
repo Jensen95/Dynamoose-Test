@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
     changelog: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    downloads: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   })
 
