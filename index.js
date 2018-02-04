@@ -31,18 +31,18 @@ const deviceAuthentication = async (ctx, next) => {
       ]
     }).then(subscriber => {
       if (subscriber == null) {
-        ctx.throw(401, 'Not found')
+        return ctx.throw(401, 'Not found')
       }
       ctx.zenseId = subscriber.zenseId
       // Check if license still is valid
       if (moment(subscriber.terminationDate).isBefore(moment(), 'day')) {
-        ctx.throw(402, 'Renew ZenseControl license')
+        return ctx.throw(402, 'Renew ZenseControl license')
       }
     })
       .catch(error => ctx.throw(403, error))
     await next()
   } else {
-    return ctx.throw(412, 'Authorization header not present or has ambiguous content')
+    return ctx.throw(412, 'Authorization header isn\'t present or has ambiguous content')
   }
 }
 
@@ -55,7 +55,7 @@ const managementAuthentication = async (ctx, next) => {
   ) {
     await next()
   } else {
-    ctx.throw(407, 'Proxy Authentication Required')
+    return ctx.throw(407, 'Proxy Authentication Required')
   }
 }
 
@@ -73,7 +73,7 @@ router.get('/latest/:service/:build', deviceAuthentication, async (ctx) => {
   if (fs.existsSync(path.resolve(buildsRootPath, requestedServiceBuildPath))) {
     await send(ctx, requestedServiceBuildPath, {root: buildsRootPath})
   } else {
-    ctx.throw(403)
+    return ctx.throw(403)
   }
 })
 
