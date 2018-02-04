@@ -10,6 +10,7 @@ const path = require('path')
 const fs = require('graceful-fs')
 const moment = require('moment')
 const Subscriber = require('./models').Subscriber
+const Service = require('./models').Service
 
 const PORT = process.env.PORT || 8000
 
@@ -81,25 +82,24 @@ router.get('/latest/:service/:build', deviceAuthentication, async (ctx) => {
 router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
   const formBody = ctx.request.body
   if (formBody.zenseId == null || formBody.zenseMac == null || formBody.socType == null) {
-    return ctx.throw(400, `Missing: zenseId, MAC or socType`)
-  } else {
-    // TODO: Check if terminationDate is negative
-    // TerminationDate sets default period on creation if not specified it's always in days forward
-    const {zenseId = '', zenseMac = '', socType = '', terminationDate = 185} = formBody
-    const activeDuration = moment.duration({'days': terminationDate})
-
-    return Subscriber.create({
-      zenseId,
-      zenseMac,
-      socType,
-      terminationDate: moment().add(activeDuration).utc().format(),
-      deviceToken: crypto.createHmac('sha256', zenseMac).update(zenseId.toString()).digest('hex')
-    }).then(subscriber => {
-      ctx.status = 201
-      ctx.body = subscriber
-    })
-      .catch(error => ctx.throw(400, error))
+    return ctx.throw(400, 'zenseId, mac and socType is required')
   }
+  // TODO: Check if terminationDate is negative
+  // TerminationDate sets default period on creation if not specified it's always in days forward
+  const {zenseId = '', zenseMac = '', socType = '', terminationDate = 185} = formBody
+  const activeDuration = moment.duration({'days': terminationDate})
+
+  return Subscriber.create({
+    zenseId,
+    zenseMac,
+    socType,
+    terminationDate: moment().add(activeDuration).utc().format(),
+    deviceToken: crypto.createHmac('sha256', zenseMac).update(zenseId.toString()).digest('hex')
+  }).then(subscriber => {
+    ctx.status = 201
+    ctx.body = subscriber
+  })
+    .catch(error => ctx.throw(400, error))
 })
 
 router.put('/device', managementAuthentication, koaBody(), async (ctx) => {
@@ -113,6 +113,26 @@ router.get('/subscribers', managementAuthentication, async (ctx) => {
       ctx.body = JSON.stringify(subcribers, null, 2)
     })
     .catch(error => ctx.throw(404, error))
+})
+
+router.post('/build', managementAuthentication, koaBody(), async (ctx) => {
+  // URL encoded
+  const formBody = ctx.request.body
+  if (formBody.serviceName == null || formBody.version == null || formBody.buildName == null) {
+    return ctx.throw(400, 'serviceName, version and build is required')
+  }
+
+  const {serviceName = '', version = '', buildName = ''} = formBody
+
+  return Service.create({
+    serviceName,
+    version,
+    buildName
+  }).then(service => {
+    ctx.status = 201
+    ctx.body = service
+  })
+    .catch(error => ctx.throw(400, error))
 })
 
 app.use(logger())
