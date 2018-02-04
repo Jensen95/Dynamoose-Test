@@ -8,11 +8,13 @@ module.exports = (sequelize, DataTypes) => {
     },
     version: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     build: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     changelog: {
       type: DataTypes.TEXT,
@@ -20,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     downloads: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      defaultValue: 0
     }
   })
 

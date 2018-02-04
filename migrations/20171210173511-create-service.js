@@ -15,11 +15,13 @@ module.exports = {
       },
       version: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        unique: true
       },
       build: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        unique: true
       },
       changelog: {
         type: Sequelize.TEXT,
@@ -28,7 +30,7 @@ module.exports = {
       downloads: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        default: 0
+        defaultValue: 0
       },
       createdAt: {
         allowNull: false,
