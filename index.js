@@ -72,18 +72,22 @@ router.get('/', managementAuthentication, async (ctx) => {
     .catch(error => ctx.throw(404, error))
 })
 
+// Adds a new device to the subscription table and returns the created device
 router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
   const formBody = ctx.request.body
   if (formBody.zenseId == null || formBody.zenseMac == null || formBody.socType == null) {
     return ctx.throw(400, `Missing: zenseId, MAC or socType`)
   } else {
-    // TODO: Add moment ISO + termationDate
+    // TODO: Check if terminationDate is negative
+    // TerminationDate sets default period on creation if not specified it's always in days forward
     const {zenseId = '', zenseMac = '', socType = '', terminationDate = 185} = formBody
+    const activeDuration = moment.duration({'days': terminationDate})
+
     return Subscriber.create({
       zenseId,
       zenseMac,
       socType,
-      terminationDate: terminationDate,
+      terminationDate: moment().add(activeDuration).utc().format(),
       deviceToken: crypto.createHmac('sha256', zenseMac).update(zenseId.toString()).digest('hex')
     }).then(subscriber => {
       ctx.status = 201
