@@ -13,7 +13,54 @@ const PORT = process.env.PORT || 8000
 const app = new Koa()
 const router = new Router()
 
-router.get('/', async (ctx) => {
+// Autorization for ZenseControl device routes
+const deviceAuthentication = async (ctx, next) => {
+  if (
+    typeof ctx.headers.authorizationtoken === 'string' &&
+    /^([0-9]|[a-f]){64}$/ig.test(ctx.headers.authorizationtoken)
+  ) {
+    const deviceToken = ctx.headers.authorizationtoken
+    await Subscriber.find({where: {deviceToken}})
+      .then(subscriber => {
+        if (subscriber == null) {
+          throw new Error('Not found')
+        }
+
+        // TODO: Add terminationDate check if terminated return: 409 Renew license
+        console.log(subscriber)
+      })
+      .catch(error => ctx.throw(403, error))
+    await next()
+  } else {
+    return ctx.throw(412, 'Authorization header not present or has ambiguous content')
+  }
+}
+
+// Autorization for ZenseControl management routes
+const managementAuthentication = async (ctx, next) => {
+  // Remember to change IPs to the correct ones
+  if (
+    ctx.ip === '::ffff:185.24.171.16' ||
+    ctx.ip === '::1'
+  ) {
+    await next()
+  } else {
+    ctx.throw(407, 'Proxy Authentication Required')
+  }
+}
+
+// Returns latest build number if there's a newer version for the service
+router.get('/latest/:service', deviceAuthentication, async (ctx) => {
+  ctx.throw(400, `Missing: zenseId, MAC or socType`)
+  return ctx.body = `IP: ${ctx.ip} HOST:${ctx.host}`
+})
+
+// Returns build
+router.get('/latest/:service', deviceAuthentication, async (ctx) => {
+
+})
+
+router.get('/', managementAuthentication, async (ctx) => {
   return Subscriber.all()
     .then(subcribers => {
       ctx.body = JSON.stringify(subcribers, null, 2)
@@ -21,46 +68,34 @@ router.get('/', async (ctx) => {
     .catch(error => ctx.throw(404, error))
 })
 
-router.get('/latest', async (ctx) => {
-
-})
-
-router.get('/auth', async (ctx) => {
-  // Length of sha256 is 64
-  const deviceToken = ctx.query.deviceToken
-  return Subscriber.find({where: {deviceToken}})
-    .then(subscriber => {
-      // If not found return nothing
-      // TODO: Add terminationDate check
+router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
+  const formBody = ctx.request.body
+  if (formBody.zenseId == null || formBody.zenseMac == null || formBody.socType == null) {
+    return ctx.throw(400, `Missing: zenseId, MAC or socType`)
+  } else {
+    // TODO: Add moment ISO + termationDate
+    const {zenseId = '', zenseMac = '', socType = '', terminationDate = 185} = formBody
+    return Subscriber.create({
+      zenseId,
+      zenseMac,
+      socType,
+      terminationDate: terminationDate,
+      deviceToken: crypto.createHmac('sha256', zenseMac).update(zenseId.toString()).digest('hex')
+    }).then(subscriber => {
+      ctx.status = 201
       ctx.body = subscriber
     })
-    .catch(error => ctx.throw(403, error))
-})
-
-router.post('/device', koaBody(), async (ctx) => {
-  const formBody = ctx.request.body
-  if (formBody.zenseId == null || formBody.zenseMac == null) {
-    return ctx.throw(400, `Missing: zenseId or MAC`)
+      .catch(error => ctx.throw(400, error))
   }
-  // TODO: Add moment ISO + termationDate
-  const {zenseId = '', zenseMac = '', terminationDate = 185} = formBody
-  return Subscriber.create({
-    zenseId,
-    zenseMac,
-    terminationDate: terminationDate,
-    deviceToken: crypto.createHmac('sha256', zenseMac).update(zenseId.toString()).digest('hex')
-  }).then(subscriber => {
-    ctx.status = 201
-    ctx.body = subscriber
-  })
-    .catch(error => ctx.throw(400, error))
 })
 
-router.put('/device', koaBody(), async (ctx) => {
+router.put('/device', managementAuthentication, koaBody(), async (ctx) => {
   // TODO: Add the option to change mac or extend termination date
+  // ZenseID and a optional field is required
 })
 
 app.use(logger())
 app.use(router.routes())
+app.use(router.allowedMethods())
 
 app.listen(PORT, () => console.log(`zensehub api service started on :${PORT}`))
