@@ -101,6 +101,7 @@ router.get('/latest/:service/:build', deviceAuthentication, async (ctx) => {
   const requestedServiceBuildPath = path.join(ctx.params.service, `${ctx.params.build}.zip`)
 
   if (fs.existsSync(path.resolve(buildsRootPath, requestedServiceBuildPath))) {
+    // TODO: Increment downloads on buildName
     await send(ctx, requestedServiceBuildPath, {root: buildsRootPath})
   } else {
     return ctx.throw(403)
@@ -132,7 +133,7 @@ router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
 })
 
 router.put('/device', managementAuthentication, async (ctx) => {
-  // ZenseID and a optional field is required
+  // ZenseID and an optional field is required
   try {
     JSON.parse(ctx.query.query)
   } catch (error) {
