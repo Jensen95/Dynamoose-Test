@@ -20,15 +20,19 @@ const deviceAuthentication = async (ctx, next) => {
     /^([0-9]|[a-f]){64}$/ig.test(ctx.headers.authorizationtoken)
   ) {
     const deviceToken = ctx.headers.authorizationtoken
-    await Subscriber.find({where: {deviceToken}})
-      .then(subscriber => {
-        if (subscriber == null) {
-          throw new Error('Not found')
-        }
+    await Subscriber.findOne({
+      where: {deviceToken},
+      attributes: ['terminationDate']
+    }).then(subscriber => {
+      if (subscriber == null) {
+        ctx.throw(401, 'Not found')
+      }
 
-        // TODO: Add terminationDate check if terminated return: 409 Renew license
-        console.log(subscriber)
-      })
+      // Check if license still is valid
+      if (moment(subscriber.terminationDate).isBefore(moment(), 'day')) {
+        ctx.throw(402, 'Renew ZenseControl license')
+      }
+    })
       .catch(error => ctx.throw(403, error))
     await next()
   } else {
@@ -38,7 +42,7 @@ const deviceAuthentication = async (ctx, next) => {
 
 // Autorization for ZenseControl management routes
 const managementAuthentication = async (ctx, next) => {
-  // Remember to change IPs to the correct ones
+  // TODO: Remember to change IPs to the correct ones
   if (
     ctx.ip === '::ffff:185.24.171.16' ||
     ctx.ip === '::1'
