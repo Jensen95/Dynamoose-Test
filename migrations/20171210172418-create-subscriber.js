@@ -16,6 +16,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
+      socType: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
       terminationDate: {
         type: Sequelize.STRING,
         allowNull: false
