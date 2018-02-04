@@ -131,9 +131,44 @@ router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
     .catch(error => ctx.throw(400, error))
 })
 
-router.put('/device', managementAuthentication, koaBody(), async (ctx) => {
-  // TODO: Add the option to change mac or extend termination date
+router.put('/device', managementAuthentication, async (ctx) => {
   // ZenseID and a optional field is required
+  try {
+    JSON.parse(ctx.query.query)
+  } catch (error) {
+    return ctx.throw(400, 'Query not valid JSON')
+  }
+  const query = JSON.parse(ctx.query.query)
+  const {zenseId = null, zenseMac = null, socType = null, terminationDate = 0} = query
+  if (zenseId == null || (zenseMac == null && socType == null && terminationDate === 0)) {
+    return ctx.throw(400, 'zenseId and [zenseMac || socType || terminationDate] value is required')
+  }
+
+  if (!/^([A-F]|\d){12}$/gi.test(zenseMac)) {
+    return ctx.throw(400, 'Invalid MAC')
+  }
+
+  return Subscriber.findById(zenseId)
+    .then(subscriber => {
+      if (zenseMac != null) {
+        subscriber.zenseMac = zenseMac
+      }
+
+      if (socType != null) {
+        subscriber.socType = socType
+      }
+
+      if (terminationDate !== 0) {
+        const durationExtion = moment.duration({'days': terminationDate})
+        const lastActiveDate = moment(subscriber.terminationDate).add(durationExtion)
+        subscriber.terminationDate = lastActiveDate.utc().format()
+      }
+
+      return subscriber.save().then(() => {
+        ctx.status = 204
+      })
+    })
+    .catch(error => ctx.throw(400, error))
 })
 
 router.get('/subscribers', managementAuthentication, async (ctx) => {
