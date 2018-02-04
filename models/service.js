@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const Service = sequelize.define('Service', {
-    service: {
+    serviceName: {
       type: DataTypes.STRING,
       allowNull: false
     },
