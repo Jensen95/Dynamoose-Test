@@ -9,6 +9,8 @@ const crypto = require('crypto')
 const path = require('path')
 const fs = require('graceful-fs')
 const moment = require('moment')
+const semver = require('semver')
+
 const Subscriber = require('./models').Subscriber
 const Service = require('./models').Service
 
@@ -62,8 +64,35 @@ const managementAuthentication = async (ctx, next) => {
 
 // Returns latest build number if there's a newer version for the service if not returns the same version as in query
 router.get('/latest/:service', deviceAuthentication, async (ctx) => {
-  ctx.throw(400, `Missing: zenseId, MAC or socType`)
-  return ctx.body = `IP: ${ctx.ip} HOST:${ctx.host}`
+  try {
+    JSON.parse(ctx.query.query)
+  } catch (error) {
+    return ctx.throw(400, 'Query not valid JSON')
+  }
+  const query = JSON.parse(ctx.query.query)
+
+  if (ctx.query.query == null) {
+    return ctx.throw(400, 'Current version needed in query')
+  } else if (semver.valid(query.version) == null) {
+    return ctx.throw(400, 'Version number is not valid  semantic versioning 2.0.0, See https://semver.org/')
+  }
+
+  return Service.findOne({
+    order: [
+      ['createdAt', 'DESC']
+    ],
+    attributes: [
+      'version',
+      'buildName'
+    ]
+  })
+    .then(service => {
+      if (semver.gt(service.version, query.version)) {
+        ctx.body = JSON.stringify(service.buildName, null, 2)
+      } else {
+        ctx.status = 304
+      }
+    })
 })
 
 // Returns requested build, returns forbidden if file doesn't exists
