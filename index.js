@@ -4,7 +4,10 @@ const Koa = require('koa')
 const Router = require('koa-router')
 const logger = require('koa-logger')
 const koaBody = require('koa-body')
+const send = require('koa-send')
 const crypto = require('crypto')
+const path = require('path')
+const fs = require('graceful-fs')
 const moment = require('moment')
 const Subscriber = require('./models').Subscriber
 
@@ -53,23 +56,22 @@ const managementAuthentication = async (ctx, next) => {
   }
 }
 
-// Returns latest build number if there's a newer version for the service
+// Returns latest build number if there's a newer version for the service if not returns the same version as in query
 router.get('/latest/:service', deviceAuthentication, async (ctx) => {
   ctx.throw(400, `Missing: zenseId, MAC or socType`)
   return ctx.body = `IP: ${ctx.ip} HOST:${ctx.host}`
 })
 
-// Returns build
-router.get('/latest/:service', deviceAuthentication, async (ctx) => {
+// Returns requested build, returns forbidden if file doesn't exists
+router.get('/latest/:service/:build', deviceAuthentication, async (ctx) => {
+  const buildsRootPath = path.join(__dirname, '/builds')
+  const requestedServiceBuildPath = path.join(ctx.params.service, `${ctx.params.build}.zip`)
 
-})
-
-router.get('/', managementAuthentication, async (ctx) => {
-  return Subscriber.all()
-    .then(subcribers => {
-      ctx.body = JSON.stringify(subcribers, null, 2)
-    })
-    .catch(error => ctx.throw(404, error))
+  if (fs.existsSync(path.resolve(buildsRootPath, requestedServiceBuildPath))) {
+    await send(ctx, requestedServiceBuildPath, {root: buildsRootPath})
+  } else {
+    ctx.throw(403)
+  }
 })
 
 // Adds a new device to the subscription table and returns the created device
@@ -100,6 +102,14 @@ router.post('/device', managementAuthentication, koaBody(), async (ctx) => {
 router.put('/device', managementAuthentication, koaBody(), async (ctx) => {
   // TODO: Add the option to change mac or extend termination date
   // ZenseID and a optional field is required
+})
+
+router.get('/subscribers', managementAuthentication, async (ctx) => {
+  return Subscriber.all()
+    .then(subcribers => {
+      ctx.body = JSON.stringify(subcribers, null, 2)
+    })
+    .catch(error => ctx.throw(404, error))
 })
 
 app.use(logger())

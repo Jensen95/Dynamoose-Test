@@ -4,10 +4,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "graceful-fs": "^4.1.11",
     "koa": "^2.4.1",
     "koa-body": "^2.5.0",
     "koa-logger": "^3.1.0",
     "koa-router": "^7.3.0",
+    "koa-send": "^4.1.2",
     "moment": "^2.19.4",
     "pg": "^7.4.0",
     "pg-hstore": "^2.3.2",
